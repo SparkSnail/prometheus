@@ -336,6 +336,8 @@ type TLSConfig struct {
 	ServerName string `yaml:"server_name,omitempty"`
 	// Disable target certificate validation.
 	InsecureSkipVerify bool `yaml:"insecure_skip_verify"`
+	// Set minimal TLS version
+	MinVersion string `yaml:"min_version"`
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.

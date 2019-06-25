@@ -62,6 +62,10 @@ const (
 	// server name to use as the SNI host when connecting via TLS
 	HTTPTLSServerName = "CONSUL_TLS_SERVER_NAME"
 
+	// HTTPTLSMinVersion defines an environment variable name which sets the
+	// minimal version of TLS
+	HTTPTLSMinVersion = "CONSUL_TLS_MIN_VERSION"
+
 	// HTTPSSLVerifyEnvName defines an environment variable name which sets
 	// whether or not to disable certificate checking.
 	HTTPSSLVerifyEnvName = "CONSUL_HTTP_SSL_VERIFY"
@@ -317,6 +321,9 @@ type TLSConfig struct {
 
 	// InsecureSkipVerify if set to true will disable TLS host verification.
 	InsecureSkipVerify bool
+
+	// MinVersion is the optional value to set the minimal version of TLS
+	MinVersion string
 }
 
 // DefaultConfig returns a default configuration for the client. By default this
@@ -410,6 +417,9 @@ func defaultConfig(transportFn func() *http.Transport) *Config {
 			config.TLSConfig.InsecureSkipVerify = true
 		}
 	}
+	if v:= os.Getenv(HTTPTLSMinVersion); v!= "" {
+		config.TLSConfig.MinVersion = v
+	}
 
 	return config
 }
@@ -452,6 +462,20 @@ func SetupTLSConfig(tlsConfig *TLSConfig) (*tls.Config, error) {
 		}
 	}
 
+	if tlsConfig.MinVersion != "" {
+		switch tlsConfig.MinVersion {
+			case "1.0":
+				tlsClientConfig.MinVersion = tls.VersionTLS10
+			case "1.1":
+				tlsClientConfig.MinVersion = tls.VersionTLS11
+			case "1.2":
+				tlsClientConfig.MinVersion = tls.VersionTLS12
+			case "1.3":
+				os.Setenv("GODEBUG", os.Getenv("GODEBUG")+",tls13=1")
+				tlsClientConfig.MinVersion = tls.VersionTLS13
+		}
+	}
+
 	return tlsClientConfig, nil
 }
 
@@ -468,7 +492,8 @@ func (c *Config) GenerateEnv() []string {
 		fmt.Sprintf("%s=%s", HTTPClientCert, c.TLSConfig.CertFile),
 		fmt.Sprintf("%s=%s", HTTPClientKey, c.TLSConfig.KeyFile),
 		fmt.Sprintf("%s=%s", HTTPTLSServerName, c.TLSConfig.Address),
-		fmt.Sprintf("%s=%t", HTTPSSLVerifyEnvName, !c.TLSConfig.InsecureSkipVerify))
+		fmt.Sprintf("%s=%t", HTTPSSLVerifyEnvName, !c.TLSConfig.InsecureSkipVerify),
+		fmt.Sprintf("%s=%s", HTTPTLSMinVersion, c.TLSConfig.MinVersion),)
 
 	if c.HttpAuth != nil {
 		env = append(env, fmt.Sprintf("%s=%s:%s", HTTPAuthEnvName, c.HttpAuth.Username, c.HttpAuth.Password))
@@ -523,6 +548,10 @@ func NewClient(config *Config) (*Client, error) {
 
 	if !config.TLSConfig.InsecureSkipVerify {
 		config.TLSConfig.InsecureSkipVerify = defConfig.TLSConfig.InsecureSkipVerify
+	}
+
+	if config.TLSConfig.MinVersion == "" {
+		config.TLSConfig.MinVersion = defConfig.TLSConfig.MinVersion
 	}
 
 	if config.HttpClient == nil {

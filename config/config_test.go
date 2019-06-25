@@ -309,6 +309,7 @@ var expectedConf = &Config{
 							KeyFile:            filepath.FromSlash("testdata/valid_key_file"),
 							CAFile:             filepath.FromSlash("testdata/valid_ca_file"),
 							InsecureSkipVerify: false,
+							MinVersion:         []string{"1.0", "1.1", "1.2", "1.3"},
 						},
 					},
 				},

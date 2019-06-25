@@ -52,6 +52,7 @@ var (
 			KeyFile:            "shouldnotexist.key",
 			CAFile:             "shouldnotexist.ca",
 			CertFile:           "shouldnotexist.cert",
+			minVersion:         "1.0",
 		},
 	}
 	groupsconf = SDConfig{

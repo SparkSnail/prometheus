@@ -261,7 +261,11 @@ A `tls_config` allows configuring TLS connections.
 
 # Disable validation of the server certificate.
 [ insecure_skip_verify: <boolean> ]
+
+# Set TLS version
+[ min_version: <string>]
 ```
+
 
 ### `<azure_sd_config>`
 
